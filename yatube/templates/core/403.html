@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+
+{% block title %}
+  Ошибка 403
+{% endblock %}
+
+{% block content %}
+  <center>
+    <h1>
+      Ошибка 403!
+    </h1>
+    <p>
+      <h5>
+        Отказ в доступе. Доступ к данной странице запрещен.
+      </h5>
+    </p>
+    <a href="{% url 'posts:index' %}">
+      Проследуйте на главную
+    </a>
+  </center>
+{% endblock %}

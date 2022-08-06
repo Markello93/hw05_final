@@ -6,7 +6,7 @@ from django.urls import reverse
 from django.core.cache import cache
 
 from ..constants import POST_STRING_SIZE
-from ..models import Group, Post, Comment, Follow
+from ..models import Group, Post, Comment
 
 User = get_user_model()
 

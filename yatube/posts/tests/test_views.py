@@ -106,7 +106,7 @@ class PostsPagesTests(TestCase):
             self.post.text: post.text,
             self.post.group: post.group,
             self.post.id: post.id,
-            self.post.image: post.image,
+            self.post.image: post.image
         }
         for reverse_name, response_name in context_objects.items():
             with self.subTest(reverse_name=reverse_name):
@@ -118,8 +118,21 @@ class PostsPagesTests(TestCase):
             reverse('posts:post_detail', kwargs={'post_id': self.post.id})
         )
         self.correct_context_for_functions(response)
-        comments = response.context['comments']
-        self.assertEqual(comments, self.comments)
+
+        response = self.authorized_author.get(
+            reverse('posts:post_detail', kwargs={'post_id': self.post.id})
+        )
+        form_fields = {
+            'text': forms.fields.CharField,
+            'post': forms.fields.ForeignKey,
+            'author': forms.fields.ForeignKey,
+        }
+        for value, expected in form_fields.items():
+            with self.subTest(value=value):
+                form_field = response.context.get('form').fields.get(value)
+                self.assertIsInstance(form_field, expected)
+            self.assertEqual(response.context.get('following'), True)
+            self.assertIsInstance(response.context.get('following'), bool)
 
     def test_post_create_show_correct_context_in_edit(self):
         """Шаблон post_create сформирован с правильным контекстом

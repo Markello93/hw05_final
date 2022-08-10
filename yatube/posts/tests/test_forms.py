@@ -48,8 +48,8 @@ class PostsPagesTests(TestCase):
 
     @classmethod
     def tearDownClass(cls):
+        shutil.rmtree(TEMP_MEDIA_ROOT, ignore_errors=True)
         super().tearDownClass()
-        shutil.rmtree(TEMP_MEDIA_ROOT)
         cache.clear()
 
     def setUp(self):

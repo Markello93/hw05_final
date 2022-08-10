@@ -1,6 +1,5 @@
 from django.db import models
 from django.contrib.auth import get_user_model
-
 from .constants import POST_STRING_SIZE
 
 User = get_user_model()

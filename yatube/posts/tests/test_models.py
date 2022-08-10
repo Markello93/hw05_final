@@ -26,7 +26,7 @@ class PostModelTest(TestCase):
         )
 
     def test_models_have_correct_object_names(self):
-        """Проверка корректной работы __str__."""
+        """Проверка корректной работы нейминга( __str__) объектов в модели."""
 
         check_dict = {
             self.post.text[:POST_STRING_SIZE]: str(self.post),

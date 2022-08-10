@@ -86,6 +86,12 @@ class PostsPagesTests(TestCase):
         author = response.context['author']
         self.assertEqual(author, self.author)
 
+        response = self.authorized_user.get(
+            f'/profile/{self.author.username}/follow/', Follow=True
+        )
+        following = response.context['following']
+        self.assertEqual(following, self.author.username)
+
     def correct_context_for_functions(self, response):
         """Унифицированный тест для проверки получения требуемого
         ключа объекта из словаря контекста,
@@ -111,8 +117,9 @@ class PostsPagesTests(TestCase):
         response = self.client.get(
             reverse('posts:post_detail', kwargs={'post_id': self.post.id})
         )
-
         self.correct_context_for_functions(response)
+        comments = response.context['comments']
+        self.assertEqual(comments, self.comments)
 
     def test_post_create_show_correct_context_in_edit(self):
         """Шаблон post_create сформирован с правильным контекстом
@@ -160,7 +167,7 @@ class PostsPagesTests(TestCase):
                     response.context.get('page_obj')[0], self.post
                 )
 
-    def test_post_for_real_group(self):
+    def test_created_post_going_for_his_group(self):
         """Тест-проверка, что пост попадает в группу, к
         которой должен относится."""
         another_group = Group.objects.create(
@@ -173,7 +180,7 @@ class PostsPagesTests(TestCase):
         )
         self.assertNotIn(self.post, response.context['page_obj'])
 
-    def test_cache_for_index(self):
+    def test_cache_for_index_page(self):
         """Тест проверяющий работу кэширования страницы"""
         index_page = reverse('posts:index')
         response = self.client.get(index_page)
@@ -262,43 +269,58 @@ class FollowTests(TestCase):
         self.authorized_following.force_login(self.following)
         cache.clear()
 
-    def test_follow_author(self):
+    def test_auth_user_can_follow_author(self):
         """Тест проверяющий что авторизованный пользователь
         может подписываться на других"""
-
+        self.assertFalse(
+            Follow.objects.filter(
+                user=self.follower, author=self.following
+            ).exists()
+        )
         self.authorized_follower.get(
             reverse(
                 'posts:profile_follow',
                 kwargs={'username': self.following.username},
             )
         )
-        self.assertEqual(Follow.objects.all().count(), 1)
+        self.assertEqual(Follow.objects.count(), 1)
         self.assertTrue(
             Follow.objects.filter(
                 user=self.follower, author=self.following
             ).exists()
         )
 
-    def test_unfollow_author(self):
+    def test_auth_user_can_unfollow_author(self):
         """Тест проверяющий что авторизованный пользователь
         может отписаться от автора"""
-
+        self.authorized_follower.get(
+            reverse(
+                'posts:profile_follow',
+                kwargs={'username': self.following.username},
+            )
+        )
+        self.assertTrue(
+            Follow.objects.filter(
+                user=self.follower, author=self.following
+            ).exists())
         self.authorized_follower.get(
             reverse(
                 'posts:profile_unfollow',
                 kwargs={'username': self.following.username},
             )
         )
-        self.assertEqual(Follow.objects.all().count(), 0)
+        self.assertEqual(Follow.objects.count(), 0)
         self.assertFalse(
             Follow.objects.filter(
                 user=self.follower, author=self.following
             ).exists()
         )
 
-    def test_subscription_feed(self):
-        """запись появляется в ленте подписчиков"""
+    def test_subscription_feed_for_auth_users(self):
+        """При создании запись появляется в ленте подписчиков автора"""
         Follow.objects.create(user=self.follower, author=self.following)
         response = self.authorized_follower.get('/follow/')
         follower_index = response.context['page_obj'][0]
         self.assertEqual(self.post, follower_index)
+        response = self.authorized_following.get('/follow/')
+        self.assertNotContains(response, follower_index)

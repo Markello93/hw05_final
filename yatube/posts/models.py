@@ -1,8 +1,6 @@
 from django.db import models
 from django.contrib.auth import get_user_model
 
-# from core.models import CreatedModel
-
 from .constants import POST_STRING_SIZE
 
 User = get_user_model()
@@ -56,7 +54,6 @@ class Post(models.Model):
         related_name='posts',
     )
 
-    # Поле для картинки (необязательное)
     image = models.ImageField('Картинка', upload_to='posts/', blank=True)
 
     class Meta:

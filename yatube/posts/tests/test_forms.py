@@ -1,8 +1,9 @@
-import http.client
+from http import HTTPStatus
 
 import shutil
 import tempfile
 
+from django.core.cache import cache
 from django.contrib.auth import get_user_model
 from django.test import Client, TestCase, override_settings
 from django.conf import settings
@@ -19,7 +20,7 @@ TEMP_MEDIA_ROOT = tempfile.mkdtemp(dir=settings.BASE_DIR)
 
 
 @override_settings(MEDIA_ROOT=TEMP_MEDIA_ROOT)
-class TaskPagesTests(TestCase):
+class PostsPagesTests(TestCase):
     """Тесты проверки forms.py для приложения posts."""
 
     @classmethod
@@ -48,13 +49,14 @@ class TaskPagesTests(TestCase):
     @classmethod
     def tearDownClass(cls):
         super().tearDownClass()
-        shutil.rmtree(TEMP_MEDIA_ROOT, ignore_errors=True)
+        shutil.rmtree(TEMP_MEDIA_ROOT)
+        cache.clear()
 
     def setUp(self):
         self.authorized_author = Client()
         self.authorized_author.force_login(self.author)
 
-    def test_create_post(self):
+    def test_auth_user_can_published_new_post(self):
         """Авторизированный пользователь может публиковать посты."""
         posts_count = Post.objects.count()
         uploaded = SimpleUploadedFile(
@@ -65,7 +67,6 @@ class TaskPagesTests(TestCase):
             'group': self.group.id,
             'image': uploaded,
         }
-
         response = self.authorized_author.post(
             reverse('posts:post_create'), data=form_data, follow=True
         )
@@ -77,19 +78,20 @@ class TaskPagesTests(TestCase):
         self.assertEqual(post.text, form_data['text'])
         self.assertEqual(post.group.id, form_data['group'])
         self.assertEqual(post.author, self.author)
-        self.assertEqual(post.image, 'posts/' + uploaded.name)
+        print(post, post.image, self.post.image)
+        self.assertEqual(post.image.name, f'posts/{uploaded.name}')
 
-    def test_text_label(self):
-        """Тестирование формы заполнения текста при создания поста."""
+    def test_text_label_for_new_post(self):
+        """Тестирование формы заполнения текста при создания нового поста."""
         title_label = self.form.fields['text'].label
         self.assertEqual(title_label, 'Текст поста')
 
-    def test_group_label(self):
-        """Тестирование формы группы при создания поста"""
+    def test_group_label_for_new_post(self):
+        """Тестирование формы группы при создания нового поста"""
         title_label = self.form.fields['group'].label
         self.assertEqual(title_label, 'Название группы')
 
-    def test_edit_post(self):
+    def test_auth_user_can_edit_post(self):
         """Авторизированный пользователь может редактировать посты."""
         uploaded = SimpleUploadedFile(
             name='image.jpg', content=self.image, content_type='image/gif'
@@ -105,23 +107,72 @@ class TaskPagesTests(TestCase):
             data=form_data,
             follow=True,
         )
-        self.assertEqual(response.status_code, http.client.OK)
+        self.assertEqual(response.status_code, HTTPStatus.OK)
         post_edited = Post.objects.get(pk=post.id)
         self.assertEqual(post_edited.text, form_data['text'])
         self.assertEqual(post_edited.group.id, form_data['group'])
+        self.assertEqual(post_edited.image.name, f'posts/{uploaded.name}')
 
-    def test_post_detail_form(self):
-        """Тестирование добавления е комментария"""
-        form_data = {'post': self.post, 'text': 'Комментарий'}
-        post = Post.objects.first()
+    def test_auth_user_can_comment_post(self):
+        """Тестирование добавления комментария для авторизированного юзера"""
+        numb_of_comments = Comment.objects.count()
+        form_data = {'text': 'Комментарий'}
         response = self.authorized_author.post(
-            reverse('posts:add_comment', kwargs={'post_id': post.id}),
+            reverse('posts:add_comment', kwargs={'post_id': self.post.id}),
             data=form_data,
             follow=True,
         )
         self.assertRedirects(
-            response, reverse('posts:post_detail', kwargs={'post_id': post.id})
+            response, reverse('posts:post_detail', kwargs={'post_id': self.post.id})
         )
-        self.assertEqual(
-            getattr(Comment.objects.latest('created'), 'text'), 'Комментарий'
+        self.assertEqual(Comment.objects.count(), numb_of_comments+1)
+        comment = Comment.objects.first()
+        self.assertEqual(comment.author.id, self.author.id)
+        self.assertEqual(comment.text, form_data['text'])
+        self.assertEqual(comment.post.id, self.post.id)
+
+    def test_anon_user_cant_comment_post(self):
+        """Тестирование добавления комментария для неавторизированного пользователя"""
+        form_data = {'text': 'Комментарий'}
+        response = self.client.post(
+            reverse('posts:add_comment', kwargs={'post_id': self.post.id}),
+            data=form_data,
+            follow=True,
         )
+        self.assertRedirects(
+            response,
+            f'/auth/login/?next=/posts/{self.post.id}/comment/'
+        )
+        self.assertNotContains(response, 'Комментарий')
+
+    def test_anon_user_cant_create_post(self):
+        """Тестирование создания поста для неавторизированного пользователя"""
+        uploaded = SimpleUploadedFile(
+            name='image.jpg', content=self.image, content_type='image/gif'
+        )
+        form_data = {
+            'text': 'Что-то уникальное',
+            'group': self.group.id,
+            'image': uploaded,
+        }
+        response = self.client.post(
+            reverse('posts:post_create'), data=form_data, follow=True)
+        self.assertRedirects(response, '/auth/login/?next=/create/')
+        self.assertFalse(Post.objects.filter(
+            text='Что-то уникальное').exists())
+
+    def test_anon_user_cant_edit_post(self):
+        """Тестирование создания поста для неавторизированного пользователя"""
+        uploaded = SimpleUploadedFile(
+            name='image.jpg', content=self.image, content_type='image/gif'
+        )
+        form_data = {
+            'text': 'Что-то уникальное',
+            'group': self.group.id,
+            'image': uploaded,
+        }
+        response = self.client.post(
+            reverse('posts:post_create'), data=form_data, follow=True)
+        self.assertRedirects(response, '/auth/login/?next=/create/')
+        self.assertFalse(Post.objects.filter(
+            text='Что-то уникальное').exists())

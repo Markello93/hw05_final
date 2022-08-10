@@ -58,8 +58,8 @@ class PostsURLTests(TestCase):
                 response = self.authorized_author.get(address)
                 self.assertTemplateUsed(response, template)
 
-    def test_post_edit_page_with_author(self):
-        """Редактирование поста доступно только автору."""
+    def test_only_auth_user_can_edit_post(self):
+        """Страница редактирования поста доступна только автору."""
         response = self.authorized_author.get(
             f'/posts/{self.post.id}/edit',
             follow=True,
@@ -72,37 +72,37 @@ class PostsURLTests(TestCase):
         response = self.client.get('/group/fanstastic/')
         self.assertEqual(response.status_code, HTTPStatus.NOT_FOUND)
 
-    def test_authorized_client_post_create(self):
-        """Тестирование наличия у авторизированного пользователя
-        иметь доступ к странице создания поста"""
+    def test_only_auth_user_can_create_post(self):
+        """Только авторизирванный пользователь имеет доступ
+        к странице создания поста"""
         response = self.authorized_author.get('/create/')
         self.assertEqual(response.status_code, HTTPStatus.OK)
 
-    def test_index_access(self):
+    def test_index_access_for_every_user(self):
         """Тестирование доступности главной страницы
         для любого пользователю."""
         response = self.client.get('/')
         self.assertEqual(response.status_code, HTTPStatus.OK)
 
-    def test_post_group_slug_access(self):
-        """Тестирование возможности просмотреть
-        любую группу любому пользователю."""
+    def test_post_group_slug_access_for_every_user(self):
+        """Тестирование возможности просмотреть страницу
+        любой группы любому пользователю."""
         response = self.client.get(f'/group/{self.group.slug}/')
         self.assertEqual(response.status_code, HTTPStatus.OK)
 
-    def test_post_detail_access(self):
+    def test_post_detail_access_for_every_user(self):
         """Тестирование возможности просмотреть
         любой пост любому пользователю."""
         response = self.client.get(f'/posts/{self.post.id}/')
         self.assertEqual(response.status_code, HTTPStatus.OK)
 
-    def test_profile_author_access(self):
-        """Тестирование возмоджности просмотреть профиль
+    def test_profile_author_showing_for_every_user(self):
+        """Тестирование возможности просмотреть профиль
         автора для любого пользователя."""
         response = self.client.get(f'/profile/{self.post.author}/')
         self.assertEqual(response.status_code, HTTPStatus.OK)
 
-    def test_url_redirect_anonymous(self):
+    def test_post_edit_url_redirect_anonymous(self):
         """Тест определяющий факт работы редиректа при
         попытке анонимного пользователя отредактировать пост."""
         response = self.client.get(f'/posts/{self.post.id}/edit', Follow=True)
@@ -111,13 +111,13 @@ class PostsURLTests(TestCase):
             f'/auth/login/?next=/posts/{self.post.id}/edit',
         )
 
-    def test_url_redirect_anonymous(self):
+    def test_post_create_url_redirect_anonymous(self):
         """Тест определяющий факт работы редиректа при
         попытке анонимного пользователя создать пост."""
         response = self.client.get('/create/', Follow=True)
         self.assertRedirects(response, '/auth/login/?next=/create/')
 
-    def test_auth_user_edit(self):
+    def test_redirect_auth_user_cant_edit_not_his_post(self):
         """Тест определяющий факт работы редиректа при
         попытке авторизированного пользователя отредактировать
         чужой пост."""
@@ -135,7 +135,7 @@ class PostsURLTests(TestCase):
         response = self.client.get('/group/fanstastic/')
         self.assertEqual(response.status_code, HTTPStatus.NOT_FOUND)
 
-    def test_comment_redirect_anonymous(self):
+    def test_redirect_anonymous_if_he_try_to_comment(self):
         """Тест определяющий факт работы редиректа при
         попытке анонимного пользователя оставить комментарий."""
         response = self.client.get(
@@ -145,7 +145,7 @@ class PostsURLTests(TestCase):
             response, f'/auth/login/?next=/posts/{self.post.id}/comment/'
         )
 
-    def test_follow_redirect_anonymous(self):
+    def test_redirect_anonymous_if_he_try_to_follow(self):
         """Тест определяющий факт работы редиректа при
         попытке анонимного пользователя подписаться на автора."""
         response = self.client.get(

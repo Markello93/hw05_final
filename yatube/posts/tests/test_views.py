@@ -85,12 +85,20 @@ class PostsPagesTests(TestCase):
         self.correct_context_for_functions(response)
         author = response.context['author']
         self.assertEqual(author, self.author)
-
-        response = self.authorized_user.get(
-            f'/profile/{self.author.username}/follow/', Follow=True
-        )
         following = response.context['following']
-        self.assertEqual(following, self.author.username)
+        self.assertFalse(following)
+        self.authorized_user.get(
+            reverse(
+                'posts:profile_follow',
+                kwargs={'username': self.author.username},
+            )
+        )
+        new_response = self.authorized_user.get(
+            reverse('posts:profile', kwargs={'username': self.author.username})
+        )
+        following = new_response.context['following']
+        self.assertTrue(following)
+
 
     def correct_context_for_functions(self, response):
         """Унифицированный тест для проверки получения требуемого
@@ -118,21 +126,16 @@ class PostsPagesTests(TestCase):
             reverse('posts:post_detail', kwargs={'post_id': self.post.id})
         )
         self.correct_context_for_functions(response)
-
-        response = self.authorized_author.get(
-            reverse('posts:post_detail', kwargs={'post_id': self.post.id})
+        no_comments = response.context['comments']
+        self.assertFalse(no_comments)
+        form_data = {'text': 'Комментарий'}
+        second_response = self.authorized_author.post(
+            reverse('posts:add_comment', kwargs={'post_id': self.post.id}),
+            data=form_data,
+            follow=True,
         )
-        form_fields = {
-            'text': forms.fields.CharField,
-            'post': forms.fields.ForeignKey,
-            'author': forms.fields.ForeignKey,
-        }
-        for value, expected in form_fields.items():
-            with self.subTest(value=value):
-                form_field = response.context.get('form').fields.get(value)
-                self.assertIsInstance(form_field, expected)
-            self.assertEqual(response.context.get('following'), True)
-            self.assertIsInstance(response.context.get('following'), bool)
+        comments = second_response.context['comments']
+        self.assertTrue(comments)
 
     def test_post_create_show_correct_context_in_edit(self):
         """Шаблон post_create сформирован с правильным контекстом

@@ -41,9 +41,7 @@ class PostsPagesTests(TestCase):
             b'\x02\x4c\x01\x00\x3b'
         )
         cls.post = Post.objects.create(
-            author=cls.author,
-            text='Ж' * POST_STRING_SIZE,
-            group=cls.group
+            author=cls.author, text='Ж' * POST_STRING_SIZE, group=cls.group
         )
         cls.form = PostForm()
 
@@ -66,7 +64,7 @@ class PostsPagesTests(TestCase):
         form_data = {
             'text': 'Что-то уникальное',
             'group': self.group.id,
-            'image': uploaded
+            'image': uploaded,
         }
         response = self.authorized_author.post(
             reverse('posts:post_create'), data=form_data, follow=True
@@ -123,30 +121,30 @@ class PostsPagesTests(TestCase):
             follow=True,
         )
         self.assertRedirects(
-            response, reverse('posts:post_detail', kwargs={'post_id': self.post.id})
+            response,
+            reverse('posts:post_detail', kwargs={'post_id': self.post.id}),
         )
-        self.assertEqual(Comment.objects.count(), numb_of_comments+1)
+        self.assertEqual(Comment.objects.count(), numb_of_comments + 1)
         comment = Comment.objects.first()
         self.assertEqual(comment.author.id, self.author.id)
         self.assertEqual(comment.text, form_data['text'])
         self.assertEqual(comment.post.id, self.post.id)
 
     def test_anon_user_cant_comment_post(self):
-        """Тестирование добавления комментария для неавторизированного пользователя"""
+        """Тестирование добавления комментария
+        для неавторизированного пользователя"""
         form_data = {'text': 'Комментарий'}
         response = self.client.post(
             reverse('posts:add_comment', kwargs={'post_id': self.post.id}),
             data=form_data,
             follow=True,
         )
-        self.assertRedirects(
-            response,
-            f'/auth/login/?next=/posts/{self.post.id}/comment/'
-        )
+
         self.assertNotContains(response, 'Комментарий')
 
     def test_anon_user_cant_create_post(self):
-        """Тестирование создания поста для неавторизированного пользователя"""
+        """Тестирование, неавторизированный пользователь
+        не может создать пост"""
         uploaded = SimpleUploadedFile(
             name='image.jpg', content=self.image, content_type='image/gif'
         )
@@ -155,14 +153,18 @@ class PostsPagesTests(TestCase):
             'group': self.group.id,
             'image': uploaded,
         }
-        response = self.client.post(
-            reverse('posts:post_create'), data=form_data, follow=True)
-        self.assertRedirects(response, '/auth/login/?next=/create/')
-        self.assertFalse(Post.objects.filter(
-            text='Что-то уникальное').exists())
+
+        self.client.post(
+            reverse('posts:post_create'), data=form_data, follow=True
+        )
+
+        self.assertFalse(
+            Post.objects.filter(text='Что-то уникальное').exists()
+        )
 
     def test_anon_user_cant_edit_post(self):
-        """Тестирование создания поста для неавторизированного пользователя"""
+        """Тестирование, неавторизированный пользователь
+        не может отредактировать пост"""
         uploaded = SimpleUploadedFile(
             name='image.jpg', content=self.image, content_type='image/gif'
         )
@@ -171,8 +173,14 @@ class PostsPagesTests(TestCase):
             'group': self.group.id,
             'image': uploaded,
         }
-        response = self.client.post(
-            reverse('posts:post_create'), data=form_data, follow=True)
-        self.assertRedirects(response, '/auth/login/?next=/create/')
-        self.assertFalse(Post.objects.filter(
-            text='Что-то уникальное').exists())
+        post = Post.objects.first()
+        self.client.get(
+            'posts:post_edit',
+            kwargs={'post_id': post.id},
+            data=form_data,
+            follow=True,
+        )
+
+        self.assertFalse(
+            Post.objects.filter(text='Что-то уникальное').exists()
+        )

@@ -105,10 +105,10 @@ class PostsURLTests(TestCase):
     def test_post_edit_url_redirect_anonymous(self):
         """Тест определяющий факт работы редиректа при
         попытке анонимного пользователя отредактировать пост."""
-        response = self.client.get(f'/posts/{self.post.id}/edit', Follow=True)
+        response = self.client.get(f'/posts/{self.post.id}/edit/', Follow=True)
         self.assertRedirects(
             response,
-            f'/auth/login/?next=/posts/{self.post.id}/edit',
+            f'/auth/login/?next=/posts/{self.post.id}/edit/',
         )
 
     def test_post_create_url_redirect_anonymous(self):

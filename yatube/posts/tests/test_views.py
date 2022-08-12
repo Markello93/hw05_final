@@ -99,7 +99,6 @@ class PostsPagesTests(TestCase):
         following = new_response.context['following']
         self.assertTrue(following)
 
-
     def correct_context_for_functions(self, response):
         """Унифицированный тест для проверки получения требуемого
         ключа объекта из словаря контекста,
@@ -114,7 +113,7 @@ class PostsPagesTests(TestCase):
             self.post.text: post.text,
             self.post.group: post.group,
             self.post.id: post.id,
-            self.post.image: post.image
+            self.post.image: post.image,
         }
         for reverse_name, response_name in context_objects.items():
             with self.subTest(reverse_name=reverse_name):
@@ -318,7 +317,8 @@ class FollowTests(TestCase):
         self.assertTrue(
             Follow.objects.filter(
                 user=self.follower, author=self.following
-            ).exists())
+            ).exists()
+        )
         self.authorized_follower.get(
             reverse(
                 'posts:profile_unfollow',

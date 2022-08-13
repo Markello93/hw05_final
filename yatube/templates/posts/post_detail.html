@@ -26,6 +26,12 @@
               Автор: {{ post.author.get_full_name }}
             </li>
             <li class="list-group-item d-flex justify-content-between align-items-center">
+              Всего комментариев автора:
+              <span>
+                {{ post.author.comments.count }}
+              </span>
+            </li>
+            <li class="list-group-item d-flex justify-content-between align-items-center">
               Всего постов автора:
               <span>
                 {{ post.author.posts.count }}
@@ -50,7 +56,7 @@
             Редактировать запись
           </a>
           {% endif %}
-          {% include 'includes/comments.html' %}
+          {% include 'posts/includes/comments.html' %}
         </article>
         {% endif %}
     </div>

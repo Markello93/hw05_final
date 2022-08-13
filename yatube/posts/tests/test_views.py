@@ -1,11 +1,12 @@
 from django import forms
 from django.contrib.auth import get_user_model
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import Client, TestCase
 from django.urls import reverse
 from django.core.cache import cache
 
 from ..constants import PAGIN_PAGES, POSTS_FOR_TESTING
-from ..models import Group, Post, Follow
+from ..models import Group, Post, Follow, Comment
 
 User = get_user_model()
 
@@ -23,10 +24,24 @@ class PostsPagesTests(TestCase):
             slug='test-slug',
         )
 
+        cls.image = (
+            b'\x47\x49\x46\x38\x39\x61\x01\x00'
+            b'\x01\x00\x00\x00\x00\x21\xf9\x04'
+            b'\x01\x0a\x00\x01\x00\x2c\x00\x00'
+            b'\x00\x00\x01\x00\x01\x00\x00\x02'
+            b'\x02\x4c\x01\x00\x3b'
+        )
+        cls.uploaded = SimpleUploadedFile(
+            name='image.jpg', content=cls.image, content_type='image/gif'
+        )
         cls.post = Post.objects.create(
-            text='Тестовый текст',
             author=cls.author,
+            text='Тестовый текст',
             group=cls.group,
+            image=cls.uploaded,
+        )
+        cls.comment = Comment.objects.create(
+            post=cls.post, author=cls.author, text='Комментарий'
         )
 
     def setUp(self):
@@ -125,16 +140,11 @@ class PostsPagesTests(TestCase):
             reverse('posts:post_detail', kwargs={'post_id': self.post.id})
         )
         self.correct_context_for_functions(response)
-        no_comments = response.context['comments']
-        self.assertFalse(no_comments)
-        form_data = {'text': 'Комментарий'}
-        second_response = self.authorized_author.post(
-            reverse('posts:add_comment', kwargs={'post_id': self.post.id}),
-            data=form_data,
-            follow=True,
+        response = self.client.get(
+            reverse('posts:post_detail', kwargs={'post_id': self.post.id})
         )
-        comments = second_response.context['comments']
-        self.assertTrue(comments)
+        comments = response.context['comments'][0]
+        self.assertEqual(self.comment, comments)
 
     def test_post_create_show_correct_context_in_edit(self):
         """Шаблон post_create сформирован с правильным контекстом
@@ -229,10 +239,6 @@ class PaginatorViewTest(TestCase):
                 group=cls.group,
             )
 
-    def setUp(self):
-        self.client = Client()
-        cache.clear()
-
     def test_first_page_contains_ten_records(self):
         """Первая страница index содержит десять записей."""
         pages_with_pagination = [
@@ -308,17 +314,7 @@ class FollowTests(TestCase):
     def test_auth_user_can_unfollow_author(self):
         """Тест проверяющий что авторизованный пользователь
         может отписаться от автора"""
-        self.authorized_follower.get(
-            reverse(
-                'posts:profile_follow',
-                kwargs={'username': self.following.username},
-            )
-        )
-        self.assertTrue(
-            Follow.objects.filter(
-                user=self.follower, author=self.following
-            ).exists()
-        )
+        Follow.objects.create(user=self.follower, author=self.following)
         self.authorized_follower.get(
             reverse(
                 'posts:profile_unfollow',
@@ -338,5 +334,15 @@ class FollowTests(TestCase):
         response = self.authorized_follower.get('/follow/')
         follower_index = response.context['page_obj'][0]
         self.assertEqual(self.post, follower_index)
-        response = self.authorized_following.get('/follow/')
-        self.assertNotContains(response, follower_index)
+
+    def test_subscription_author(self):
+        """Тест, если авторизированный пользователь подписан на автора,
+        то его собственный пост не появится в его ленте"""
+        Follow.objects.create(user=self.follower, author=self.following)
+        Following_post = Post.objects.create(
+            author=self.follower,
+            text='Тестовый текст',
+        )
+        response = self.authorized_follower.get('/follow/')
+        following_index = response.context['page_obj'][0]
+        self.assertNotEqual(Following_post, following_index)

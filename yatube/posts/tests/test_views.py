@@ -335,7 +335,7 @@ class FollowTests(TestCase):
         follower_index = response.context['page_obj'][0]
         self.assertEqual(self.post, follower_index)
 
-    def test_subscription_author(self):
+    def test_subscription_feed_not_show_own_user_post(self):
         """Тест, если авторизированный пользователь подписан на автора,
         то его собственный пост не появится в его ленте"""
         Follow.objects.create(user=self.follower, author=self.following)

@@ -25,7 +25,6 @@ def group_posts(request, slug):
     передает информацию из БД в шаблон."""
     group = get_object_or_404(Group, slug=slug)
     posts = group.posts.select_related('author', 'group')
-
     context = {
         'group': group,
         'page_obj': page_posts_paginator(request, posts),

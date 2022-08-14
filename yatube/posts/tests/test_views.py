@@ -339,10 +339,10 @@ class FollowTests(TestCase):
         """Тест, если авторизированный пользователь подписан на автора,
         то его собственный пост не появится в его ленте"""
         Follow.objects.create(user=self.follower, author=self.following)
-        Following_post = Post.objects.create(
+        following_post = Post.objects.create(
             author=self.follower,
-            text='Тестовый текст',
+            text='Тестовый текст'
         )
         response = self.authorized_follower.get('/follow/')
         following_index = response.context['page_obj'][0]
-        self.assertNotEqual(Following_post, following_index)
+        self.assertNotEqual(following_post, following_index)

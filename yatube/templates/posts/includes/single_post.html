@@ -20,11 +20,9 @@
   <a href="{% url 'posts:post_detail' post.id %}">
     Подробная информация<br>
   </a>
-  {% if post.group %}
-   {% if request.group == group %}
+  {% if post.group and request.resolver_match.url_name != 'group_list' %}
     <a href="{% url 'posts:group_list' post.group.slug %}">
       Все записи группы
     </a>
-   {% endif %}
+  {% endif %}
 </article>
-{% endif %}

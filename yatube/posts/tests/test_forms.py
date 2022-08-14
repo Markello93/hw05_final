@@ -2,7 +2,7 @@ from http import HTTPStatus
 
 import shutil
 import tempfile
-
+import hashlib
 
 from django.core.cache import cache
 from django.contrib.auth import get_user_model
@@ -41,6 +41,7 @@ class PostsPagesTests(TestCase):
             b'\x02\x00\x01\x00\x00\x02\x02\x0C'
             b'\x0A\x00\x3B'
         )
+        cls.small_gif_sha256 = hashlib.sha256(cls.small_gif).hexdigest()
         cls.uploaded = SimpleUploadedFile(
             name='small.gif', content=cls.small_gif, content_type='image/gif'
         )
@@ -84,10 +85,15 @@ class PostsPagesTests(TestCase):
         )
         self.assertEqual(Post.objects.count(), posts_count + 1)
         post = Post.objects.first()
+        with open(post.image.path, 'rb') as f:
+            file_bytes = f.read()
+            file_sha256 = hashlib.sha256(file_bytes).hexdigest()
+        self.assertEqual(self.small_gif_sha256, file_sha256)
         self.assertEqual(post.text, form_data['text'])
         self.assertEqual(post.group.id, form_data['group'])
         self.assertEqual(post.author, self.author)
         self.assertEqual(post.image, 'posts/' + form_data['image'].name)
+
 
     def test_text_label_for_new_post(self):
         """Тестирование формы заполнения текста при создания нового поста."""
@@ -119,11 +125,16 @@ class PostsPagesTests(TestCase):
         )
         self.assertEqual(response.status_code, HTTPStatus.OK)
         post_edited = Post.objects.get(pk=post.id)
+        with open(post_edited.image.path, 'rb') as f:
+            file_bytes = f.read()
+            file_sha256 = hashlib.sha256(file_bytes).hexdigest()
+        self.assertEqual(self.small_gif_sha256, file_sha256)
         self.assertEqual(post_edited.text, form_data['text'])
         self.assertEqual(post_edited.group.id, form_data['group'])
         self.assertEqual(
             post_edited.image.name, 'posts/' + form_data['image'].name
         )
+
 
     def test_auth_user_can_comment_post(self):
         """Тестирование добавления комментария для авторизированного юзера"""

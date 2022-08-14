@@ -94,7 +94,6 @@ class PostsPagesTests(TestCase):
         self.assertEqual(post.author, self.author)
         self.assertEqual(post.image, 'posts/' + form_data['image'].name)
 
-
     def test_text_label_for_new_post(self):
         """Тестирование формы заполнения текста при создания нового поста."""
         title_label = self.form.fields['text'].label
@@ -134,7 +133,6 @@ class PostsPagesTests(TestCase):
         self.assertEqual(
             post_edited.image.name, 'posts/' + form_data['image'].name
         )
-
 
     def test_auth_user_can_comment_post(self):
         """Тестирование добавления комментария для авторизированного юзера"""

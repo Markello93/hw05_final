@@ -340,8 +340,7 @@ class FollowTests(TestCase):
         то его собственный пост не появится в его ленте"""
         Follow.objects.create(user=self.follower, author=self.following)
         following_post = Post.objects.create(
-            author=self.follower,
-            text='Тестовый текст'
+            author=self.follower, text='Тестовый текст'
         )
         response = self.authorized_follower.get('/follow/')
         following_index = response.context['page_obj'][0]

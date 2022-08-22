@@ -1,20 +1,53 @@
 {% extends "base.html" %}
+{% load static %}
 {% block title %}Технологии{% endblock %}
 {% block content %}
-<div class="row">
-  <h1>Вот что я умею</h1>
-  <aside class="col-12 col-md-3">
-    <ul class="list-group list-group-flush">
-      <li class="list-group-item">
-        Python
-      </li>
-      <li class="list-group-item">
-        Django
-      </li>
-    </ul>
-  </aside>
-  <article class="col-12 col-md-9">
-    <p>Текст страницы "Технологии"</p>
-  </article>
+<div class="main__header, container py-1" align="middle">
+  <h1 class="main__title"> Технологии </h1>
+</div>
+<div class="container">
+  <div class="row">
+    <h2>Вот что я умею</h2>
+    <aside class="col-12 col-md-3">
+      <ul class="list-group list-group-flush">
+        <li class="list-group-item">
+          Программирование на Python начального уровня
+        </li>
+        <li class="list-group-item">
+          Работа с фреймворком Django
+        </li>
+        <li class="list-group-item">
+          Использование такого инструмента разработчика как GitHub
+        </li>
+      </ul>
+    </aside>
+    <section class="col-12 col-md-9">
+      <article  class="col-12 col-md-9">
+        <h2> Технологии используемые в проекте </h2>
+        <div class="row">
+          <div class="card" style="width: 20rem;">
+            <img class="card-img-top" src="{% static 'img/django.jpg' %}">
+              <div class="card-body">
+                <p class="card-text">Django</p>
+              </div>
+            <img class="card-img-top" src="{% static 'img/pycharm.jpg' %}" >
+              <div class="card-body">
+                <p class="card-text">Pycharm</p>
+              </div>
+         </div>
+          <div class="card" style="width: 20rem;">
+            <img class="card-img-top" src="{% static 'img/python.png' %}" >
+              <div class="card-body">
+                <p class="card-text">Python</p>
+              </div>
+            <img class="card-img-top" src="{% static 'img/slack.jpg' %}">
+              <div class="card-body">
+                <p class="card-text">Slack</p>
+              </div>
+          </div>
+        </div>
+      </article>
+    </section>
+  </div>
 </div>
 {% endblock %}

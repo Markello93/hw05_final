@@ -11,6 +11,8 @@ ALLOWED_HOSTS = [
     '127.0.0.1',
     '[::1]',
     'testserver',
+    'www.Mark93.pythonanywhere.com',
+    'Mark93.pythonanywhere.com',
 ]
 
 INSTALLED_APPS = [

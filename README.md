@@ -6,7 +6,7 @@
 
 ## Установка
 ```
-https://github.com/Markello93/hw05_final.git
+git clone https://github.com/Markello93/hw05_final.git
 ```
 ```
 cd hw05_final
